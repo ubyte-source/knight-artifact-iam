@@ -27,7 +27,7 @@
   },
   "require": {
     "php": ">=7.3",
-    "energia-source/knight-armor": ">=2.0.1"
+    "knight/armor": ">=2.0.1"
   },
   "repositories": [
     {
