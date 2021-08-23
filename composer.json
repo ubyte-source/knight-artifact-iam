@@ -1,0 +1,38 @@
+{
+  "name": "knight/artifact-iam",
+  "type": "library",
+  "description": "Knight PHP artifact identity and access management",
+  "keywords": [
+    "ubyte",
+    "knight",
+    "artifact",
+    "iam",
+    "access",
+    "management"
+  ],
+  "homepage": "https://github.com/energia-source/knight-artifact-iam",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Paolo Fabris",
+      "email": "support@ubyte.it",
+      "homepage": "https://www.ubyte.it/",
+      "role": "Developer"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "IAM\\": "lib/"
+    }
+  },
+  "require": {
+    "php": ">=7.3",
+    "energia-source/knight-armor": ">=2.0.1"
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/energia-source/knight-armor"
+    }
+  ]
+}
