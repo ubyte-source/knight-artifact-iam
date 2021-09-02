@@ -27,7 +27,7 @@
   },
   "require": {
     "php": ">=7.3",
-    "knight/armor": ">=2.0.1"
+    "knight/armor": ">=2.1.0"
   },
   "repositories": [
     {

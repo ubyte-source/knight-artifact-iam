@@ -16,12 +16,14 @@ use IAM\Configuration;
 class Sso
 {
     const PATH_API_LOGIN = 'api/iam/user/login';
-    const PATH_API_POLICY = 'api/iam/user/rules';
     const PATH_API_POLICY_MANDATORIES = 'api/iam/policy/mandatories';
+    const PATH_API_POLICY = 'api/iam/user/rules';
     const PATH_API_WHOAMI = 'api/iam/user/whoami';
+
     const PATH_API_USER_READ = 'api/iam/user/read';
     const PATH_API_USER_HIERARCHY = 'api/iam/user/hierarchy';
     const PATH_API_USER_ESCALATION = 'api/iam/user/escalation';
+
     const PATH_API_APPLICATION_READ = 'api/sso/application/read';
 
     const AUTHORIZATION = 'authorization';
@@ -83,7 +85,7 @@ class Sso
         if (empty($filters)) Output::print(false);
 
         $request = Configuration::getHost();
-        $request_response = IAMRequest::callAPI($request . static::PATH_API_POLICY_MANDATORIES, $filters, true);
+        $request_response = IAMRequest::callAPI($request . static::PATH_API_POLICY_MANDATORIES, $filters, IAMRequest::SKIPSTATUS);
         if (property_exists($request_response, 'status')) return $request_response->status;
         return false;
     }
@@ -173,14 +175,18 @@ class Sso
         if (!property_exists($request_response, 'documents')) return null;
 
         $request_response_key = array_column($request_response->documents, static::IDENTITY);
-        return array_combine($request_response_key, $request_response->documents);
+        $request_response_key = array_combine($request_response_key, $request_response->documents);
+
+        return $request_response_key;
     }
 
     protected static function setWhoami() : void
     {
         $request = Configuration::getHost();
-        $request_response = IAMRequest::callAPI($request . static::PATH_API_WHOAMI);
-        if (!property_exists($request_response, 'document')) Output::print(false);
+        $request_response = IAMRequest::callAPI($request . static::PATH_API_WHOAMI, null, IAMRequest::SKIPSTATUS);
+        if (!property_exists($request_response, 'document')) Navigator::exception(function () {
+            static::logout();
+        });
 
         static::$whoami = $request_response->document;
 
@@ -192,9 +198,16 @@ class Sso
         if (static::$rules !== null) return;
 
         $request = Configuration::getHost() . static::PATH_API_POLICY;
-        $request_response = IAMRequest::callAPI($request);
-        if (!property_exists($request_response, 'rules')) Output::print(false);
+        $request_response = IAMRequest::callAPI($request, null, IAMRequest::SKIPSTATUS);
+        if (false === property_exists($request_response, 'rules')) Navigator::exception(function () {
+            static::logout();
+        });
 
         static::$rules = $request_response->rules;
+    }
+
+    protected static function logout() : void
+    {
+        Cookie::set(Configuration::getCookieName(), null, -1);
     }
 }
