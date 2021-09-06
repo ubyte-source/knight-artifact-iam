@@ -6,6 +6,7 @@ use stdClass;
 
 use Knight\armor\Curl;
 use Knight\armor\Output;
+use Knight\armor\Request as KRequest;
 use Knight\armor\Navigator;
 
 use IAM\Sso;
@@ -13,18 +14,18 @@ use IAM\Configuration;
 
 class Request
 {
-    const HTTP_X_AUTHORIZATION = 'HTTP_X_AUTHORIZATION';
     const HTTP_LOGIN = 'login';
 
     const HEADER_OVERRIDE = 'x-override-ip';
     const HEADER_APPLICATION = 'x-application';
     const HEADER_AUTHOTIZATION = 'x-authorization';
+    const HEADER_OVERLOAD = 'x-overload';
 
     const SKIPSTATUS = 0x1; // (bool)
 
-    protected static $curl;            // (curl)
-    protected static $token;           // (string)
-    protected static $service = false; // (bool)
+    protected static $curl;     // (curl)
+    protected static $token;    // (string)
+    protected static $overload; // (array)
 
     final protected function __construct() {}
 
@@ -41,27 +42,39 @@ class Request
 
         $instance = new static();
         $cookie_name = Configuration::getCookieName();
+        $header_authorization = KRequest::header(static::HEADER_AUTHOTIZATION);
         if (empty($arguments)
             && !array_key_exists($cookie_name, $_COOKIE)
-            && !array_key_exists(static::HTTP_X_AUTHORIZATION, $_SERVER)) static::login();
+            && null === $header_authorization) static::login();
 
-        $instance_authorization = $token ?? $_SERVER[static::HTTP_X_AUTHORIZATION] ?? $_COOKIE[$cookie_name] ?? null;
+        $instance_authorization = $token ?? $header_authorization ?? $_COOKIE[$cookie_name] ?? null;
         if (2 > count($arguments)
             && is_string($instance_authorization)) $instance::setToken($instance_authorization);
 
         $curl = new Curl();
-        $curl->setHeader(...$instance::getHeader());
         $instance::setCURL($curl);
+        static::prepare();
 
         if (2 === count($arguments)) {
             $get = Configuration::getHost() . Sso::PATH_API_LOGIN;
             $response = $instance::callAPI($get, $arguments);
             $instance::setToken($response->authorization);
-            $curl->setHeader(...$instance::getHeader());
+            static::prepare();
         }
 
         return $instance;
     }
+
+    public static function setOverload(string ...$policies) : void
+	{
+		static::$overload = $policies;
+        static::prepare();
+	}
+
+	public static function getOverload() :? array
+	{
+		return static::$overload;
+	}
 
     public static function callAPI(string $get, ?array $post = [], int $flags = 0) : stdClass
     {
@@ -85,6 +98,12 @@ class Request
     public static function getToken() :? string
     {
         return static::$token;
+    }
+
+    protected static function prepare() : void
+    {
+        $curl = static::getCURL();
+        $curl->setHeader(...static::getHeader());
     }
 
     protected static function login() : void
@@ -115,6 +134,13 @@ class Request
         ];
         $authorization_token = static::getToken();
         if (null !== $authorization_token) array_push($authorization, static::HEADER_AUTHOTIZATION . chr(58) . chr(32) . $authorization_token);
+
+        $overload = static::getOverload();
+        if (null !== $overload) {
+            $overload_encrypt = Output::json($overload);
+            $overload_encrypt = Sso::getCipher()->encrypt($overload_encrypt);
+            array_push($authorization, static::HEADER_OVERLOAD . chr(58) . chr(32) . $overload_encrypt);
+        }
 
         return $authorization;
     }

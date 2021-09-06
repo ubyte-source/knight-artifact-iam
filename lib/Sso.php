@@ -4,6 +4,7 @@ namespace IAM;
 
 use stdClass;
 
+use Knight\armor\Cipher;
 use Knight\armor\Output;
 use Knight\armor\Cookie;
 use Knight\armor\Request;
@@ -31,10 +32,19 @@ class Sso
     const IDENTITY = '_key';
     const RETURN_URL = 'return_url';
 
-    protected static $whoami; // (object)
-    protected static $rules;  // (array)
+    const MATCH = '/^(%s)$/';
+
+    protected static $whoami;    // (object)
+    protected static $rules;     // (array)
 
     final protected function __construct() {}
+
+    public static function getCipher() : Cipher
+    {
+        $cipher = new Cipher();
+        $cipher->setKeyPersonal((string)Navigator::getClientIP(Navigator::HTTP_X_OVERRIDE_IP_ENABLE));
+        return $cipher;
+    }
 
     public static function auth() : void
     {
@@ -96,16 +106,21 @@ class Sso
 
         static::initializeAllAvalilableRules();
 
-        $filters = array_diff($filters, ['%']);
-        if (empty($filters)) return static::$rules;
+        $rules = static::$rules;
+        if (!!$overload = IAMRequest::getOverload()) $rules = array_merge($rules, $overload);
 
-		$filters_regex_rule = array_map(function ($item) {
-			return str_replace(['%', '/'], ['.*', '\/'], $item);
+        $filters = array_diff($filters, array('%'));
+        if (empty($filters)) return $rules;
+
+        $find = array('%', '/');
+		$replace = array('.*', '\/');
+		$filters_regex_rule = array_map(function ($item) use ($find, $replace) {
+			return str_replace($find, $replace, $item);
         }, $filters);
 
 		$filters_regex_rule = implode('|', $filters_regex_rule);
-        $filters_regex_rule = '/^(' . $filters_regex_rule . ')$/';
-        $filters = array_filter(static::$rules, function ($rule) use ($filters_regex_rule) {
+        $filters_regex_rule = sprintf(static::MATCH, $filters_regex_rule);
+        $filters = array_filter($rules, function ($rule) use ($filters_regex_rule) {
             return preg_match($filters_regex_rule, $rule);
         });
 
@@ -115,23 +130,23 @@ class Sso
 
     public static function youHaveNoPolicies(string ...$policies_mandatory) : bool
     {
+        $find = array('%', '/');
+		$replace = array('(.*)', '\/');
         $policies = static::getPolicies(...$policies_mandatory);
-
-		$policies_filter_regex = array_map(function ($item) {
-			return str_replace(['%', '/'], ['(.*)', '\/'], $item);
+		$policies_filter_regex = array_map(function ($item) use ($find, $replace) {
+			return str_replace($find, $replace, $item);
         }, $policies_mandatory);
-
-        $policies_filter_regex_count = count($policies_filter_regex);
+        
+        $result = count($policies_filter_regex);
 		foreach ($policies_filter_regex as $filter) {
-            $regex_match = '/^(' . $filter . ')$/';
+            $regex_match = sprintf(static::MATCH, $filter);
 			foreach ($policies as $rule) {
                 if (!preg_match($regex_match, $rule)) continue;
-
-                $policies_filter_regex_count--;
+                $result--;
                 continue 2;
 			}
         }
-		return $policies_filter_regex_count !== 0;
+		return $result !== 0;
     }
 
     public static function getUsers(?string $get = '', ?array $post = null, string ...$keys) :? array
@@ -204,10 +219,23 @@ class Sso
         });
 
         static::$rules = $request_response->rules;
+
+        if (!empty(static::$rules)) static::overload();
     }
 
     protected static function logout() : void
     {
         Cookie::set(Configuration::getCookieName(), null, -1);
+    }
+
+    protected static function overload() : void
+    {
+        $header = Request::header(IAMRequest::HEADER_OVERLOAD);
+        $header_decrypt = static::getCipher()->decrypt($header);
+        if (null !== $header_decrypt) {
+            $header_decrypt = Request::JSONDecode($header_decrypt);
+            $header_decrypt = array_values($header_decrypt);
+            IAMRequest::setOverload(...$header_decrypt);
+        }
     }
 }
