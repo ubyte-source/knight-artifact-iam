@@ -27,7 +27,11 @@ class Request
     protected static $token;    // (string)
     protected static $overload; // (array)
 
-    final protected function __construct() {}
+    final protected function __construct()
+    {
+        $curl = new Curl();
+        static::setCURL($curl);
+    }
 
     final public static function instance(string $token = null, string $email = null, string $password = null) : self
     {
@@ -51,8 +55,6 @@ class Request
         if (2 > count($arguments)
             && is_string($instance_authorization)) $instance::setToken($instance_authorization);
 
-        $curl = new Curl();
-        $instance::setCURL($curl);
         static::prepare();
 
         if (2 === count($arguments)) {
@@ -103,7 +105,7 @@ class Request
     protected static function prepare() : void
     {
         $curl = static::getCURL();
-        $curl->setHeader(...static::getHeader());
+        if (null !== $curl) $curl->setHeader(...static::getHeader());
     }
 
     protected static function login() : void
