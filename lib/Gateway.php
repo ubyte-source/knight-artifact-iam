@@ -17,7 +17,7 @@ class Gateway
     {
         $request = Configuration::getHost();
         $request_response = Request::callAPI($request . static::PATH_API_LINK . chr(47) . $basename);
-        if (property_exists($request_response, 'link')) return $request_response->link;
+        if (property_exists($request_response, 'data')) return $request_response->data;
         return null;
     }
 
@@ -25,7 +25,7 @@ class Gateway
     {
         $request = static::getLink($basename);
         $request_response = Request::callAPI($request . 'structure' . chr(47) . $path);
-        if (property_exists($request_response, 'structure')) return $request_response->structure;
+        if (property_exists($request_response, 'data')) return $request_response->data;
         return null;
     }
 
