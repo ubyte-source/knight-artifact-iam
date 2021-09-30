@@ -156,17 +156,17 @@ class Sso
 
         $request = Configuration::getHost();
         $request_response = IAMRequest::callAPI($request . static::PATH_API_USER_READ . chr(63) . $get, $request_post);
-        if (!property_exists($request_response, 'data')) return null;
+        if (!property_exists($request_response, Output::APIDATA)) return null;
 
-        $request_response_key = array_column($request_response->data, static::IDENTITY);
-        return array_combine($request_response_key, $request_response->data);
+        $request_response_key = array_column($request_response->{Output::APIDATA}, static::IDENTITY);
+        return array_combine($request_response_key, $request_response->{Output::APIDATA});
     }
 
     public static function getHierarchy(string $type = '_key') :? array
     {
         $request = Configuration::getHost();
         $request_response = IAMRequest::callAPI($request . static::PATH_API_USER_HIERARCHY . chr(47) . $type);
-        if (property_exists($request_response, 'data')) return $request_response->data;
+        if (property_exists($request_response, Output::APIDATA)) return $request_response->{Output::APIDATA};
         return null;
     }
 
@@ -176,7 +176,7 @@ class Sso
 
         $request = Configuration::getHost();
         $request_response = IAMRequest::callAPI($request . static::PATH_API_USER_ESCALATION . chr(47) . $route . chr(63) . 'skip' . chr(61) . $skip, null, IAMRequest::SKIPSTATUS);
-        if (property_exists($request_response, 'data')) return $request_response->data;
+        if (property_exists($request_response, Output::APIDATA)) return $request_response->{Output::APIDATA};
         return null;
     }
 
@@ -187,10 +187,10 @@ class Sso
 
         $request = Configuration::getHost();
         $request_response = IAMRequest::callAPI($request . static::PATH_API_APPLICATION_READ . chr(63) . $get, $request_post);
-        if (!property_exists($request_response, 'data')) return null;
+        if (!property_exists($request_response, Output::APIDATA)) return null;
 
-        $request_response_key = array_column($request_response->data, static::IDENTITY);
-        $request_response_key = array_combine($request_response_key, $request_response->data);
+        $request_response_key = array_column($request_response->{Output::APIDATA}, static::IDENTITY);
+        $request_response_key = array_combine($request_response_key, $request_response->{Output::APIDATA});
 
         return $request_response_key;
     }
@@ -199,11 +199,11 @@ class Sso
     {
         $request = Configuration::getHost();
         $request_response = IAMRequest::callAPI($request . static::PATH_API_WHOAMI, null, IAMRequest::SKIPSTATUS);
-        if (!property_exists($request_response, 'data')) Navigator::exception(function () {
+        if (!property_exists($request_response, Output::APIDATA)) Navigator::exception(function () {
             static::logout();
         });
 
-        static::$whoami = $request_response->data;
+        static::$whoami = $request_response->{Output::APIDATA};
 
         if (null !== static::getWhoamiLanguage()) Language::setSpeech(static::getWhoamiLanguage());
     }
@@ -214,11 +214,11 @@ class Sso
 
         $request = Configuration::getHost() . static::PATH_API_POLICY;
         $request_response = IAMRequest::callAPI($request, null, IAMRequest::SKIPSTATUS);
-        if (false === property_exists($request_response, 'data')) Navigator::exception(function () {
+        if (false === property_exists($request_response, Output::APIDATA)) Navigator::exception(function () {
             static::logout();
         });
 
-        static::$rules = $request_response->data;
+        static::$rules = $request_response->{Output::APIDATA};
 
         if (!empty(static::$rules)) static::overload();
     }
