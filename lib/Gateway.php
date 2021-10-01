@@ -4,6 +4,8 @@ namespace IAM;
 
 use stdClass;
 
+use Knight\armor\Output;
+
 use IAM\Request;
 use IAM\Configuration;
 
