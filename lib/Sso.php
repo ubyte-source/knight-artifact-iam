@@ -30,7 +30,6 @@ class Sso
     const AUTHORIZATION = 'authorization';
     const USER_LANGUAGE = 'language';
     const IDENTITY = '_key';
-    const RETURN_URL = 'return_url';
 
     const MATCH = '/^(%s)$/';
 
@@ -59,7 +58,7 @@ class Sso
             || true !== Cookie::set(Configuration::getCookieName(), $cookie_content)) Navigator::exception();
 
         $return_url = $_SERVER[Navigator::HTTP_ORIGIN] ?? Navigator::getUrl();
-        $return_url_get = Request::get(static::RETURN_URL);
+        $return_url_get = Request::get(Navigator::RETURN_URL);
         if (null !== $return_url_get) $return_url = base64_decode($return_url_get);
 
         Navigator::noCache();
