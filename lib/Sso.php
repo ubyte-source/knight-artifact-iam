@@ -28,8 +28,10 @@ class Sso
     const PATH_API_APPLICATION_READ = 'api/sso/application/read';
 
     const AUTHORIZATION = 'authorization';
-    const USER_LANGUAGE = 'language';
+    const AUTHORIZATION_TYPE = 'Bearer';
+
     const IDENTITY = '_key';
+    const USER_LANGUAGE = 'language';
 
     const MATCH = '/^(%s)$/';
 

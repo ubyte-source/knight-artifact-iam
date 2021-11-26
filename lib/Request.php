@@ -135,7 +135,10 @@ class Request
             static::HEADER_APPLICATION . chr(58) . chr(32) . Configuration::getApplicationKey()
         ];
         $authorization_token = static::getToken();
-        if (null !== $authorization_token) array_push($authorization, static::HEADER_AUTHOTIZATION . chr(58) . chr(32) . $authorization_token);
+        if (null !== $authorization_token) {
+            if (Sso::AUTHORIZATION_TYPE !== substr($authorization_token, 0, strlen(Sso::AUTHORIZATION_TYPE))) $authorization_token = Sso::AUTHORIZATION_TYPE . chr(32) . $authorization_token;
+            array_push($authorization, static::HEADER_AUTHOTIZATION . chr(58) . chr(32) . $authorization_token);
+        }
 
         $overload = static::getOverload();
         if (null !== $overload) {
