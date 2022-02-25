@@ -12,6 +12,8 @@ use Knight\armor\Navigator;
 use IAM\Sso;
 use IAM\Configuration;
 
+/* The Request class is used to make API calls to the SSO server */
+
 class Request
 {
     const HTTP_LOGIN = 'login';
@@ -32,6 +34,8 @@ class Request
         $curl = new Curl();
         static::setCURL($curl);
     }
+
+    /* A constructor. */
 
     final public static function instance(string $token = null, string $email = null, string $password = null) : self
     {
@@ -67,16 +71,36 @@ class Request
         return $instance;
     }
 
+    /**
+     * This function sets the overload policies for the current user
+     */
+
     public static function setOverload(string ...$policies) : void
 	{
 		static::$overload = $policies;
         static::prepare();
 	}
 
-	public static function getOverload() :? array
+	/**
+     * Return the policies overload array
+     * 
+     * @return Nothing.
+     */
+
+    public static function getOverload() :? array
 	{
 		return static::$overload;
 	}
+
+    /**
+     * This function will call the API and return the response
+     * 
+     * @param string get The URL to call.
+     * @param post The post data to send to the API.
+     * @param int flags 
+     * 
+     * @return The response from the API call.
+     */
 
     public static function callAPI(string $get, ?array $post = [], int $flags = 0) : stdClass
     {
@@ -92,21 +116,45 @@ class Request
         exit;
     }
 
+    /**
+     * Returns the current instance of the Curl class
+     * 
+     * @return A Curl object.
+     */
+
     public static function getCURL() :? Curl
     {
         return static::$curl;
     }
+
+    /**
+     * Get the token from the static property
+     * 
+     * @return The token to current authenticated user.
+     */
 
     public static function getToken() :? string
     {
         return static::$token;
     }
 
+    /**
+     * *This function is used to prepare the curl object for the request.*
+     * 
+     * The function is used to set the header for the request
+     */
+
     protected static function prepare() : void
     {
         $curl = static::getCURL();
         if (null !== $curl) $curl->setHeader(...static::getHeader());
     }
+
+    /**
+     * If the current page is not the login page, then redirect to the login page
+     * 
+     * @return The redirect URL.
+     */
 
     protected static function login() : void
     {
@@ -118,15 +166,33 @@ class Request
         });
     }
 
+    /**
+     * It sets the static property of the class to the value of the argument.
+     * 
+     * @param Curl curl The Curl object that will be used to make the request.
+     */
+
     protected static function setCURL(Curl $curl) : void
     {
         static::$curl = $curl;
     }
 
+    /**
+     * Set the token for the current session
+     * 
+     * @param string token The token to use for authentication.
+     */
+
     protected static function setToken(string $token) : void
     {
         static::$token = $token;
     }
+
+    /**
+     * Get the authorization header
+     * 
+     * @return The authorization header.
+     */
 
     protected static function getHeader() : array
     {

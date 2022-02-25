@@ -14,6 +14,8 @@ use Knight\armor\Navigator;
 use IAM\Request as IAMRequest;
 use IAM\Configuration;
 
+/* The class is used to authenticate the user and to get the user's identity */
+
 class Sso
 {
     const PATH_API_LOGIN = 'api/iam/user/login';
@@ -40,12 +42,27 @@ class Sso
 
     final protected function __construct() {}
 
+    /**
+     * The function returns a new instance of the Cipher class with the key set to the IP address of
+     * the client
+     * 
+     * @return The cipher object.
+     */
+
     public static function getCipher() : Cipher
     {
         $cipher = new Cipher();
         $cipher->setKeyPersonal((string)Navigator::getClientIP(Navigator::HTTP_X_OVERRIDE_IP_ENABLE));
         return $cipher;
     }
+
+    /**
+     * * Get the cookie content from the URL.
+     * * Decode the cookie content.
+     * * Check if the decoded content is a valid IAM token.
+     * * Set the cookie content to the decoded content.
+     * * Redirect to the return URL
+     */
 
     public static function auth() : void
     {
@@ -70,12 +87,24 @@ class Sso
         exit;
     }
 
+    /**
+     * It returns the current user's identity.
+     * 
+     * @return An object with the following properties:
+     */
+
     public static function getWhoami() :? stdClass
     {
         IAMRequest::instance();
         if (null === static::$whoami) static::setWhoami();
         return static::$whoami;
     }
+
+    /**
+     * Get the key of the identity property of the current whoami object
+     * 
+     * @return The value of the `IDENTITY` property of the `Whoami` class.
+     */
 
     public static function getWhoamiKey() :? string
     {
@@ -84,12 +113,24 @@ class Sso
         return null;
     }
 
+    /**
+     * Returns the language of the current user
+     * 
+     * @return The language code of the user.
+     */
+
     public static function getWhoamiLanguage() :? string
     {
         $whoami = static::getWhoami();
         if (property_exists($whoami, $key = static::USER_LANGUAGE)) return $whoami->$key;
         return null;
     }
+
+    /**
+     * * Request the list of mandatory policies
+     * 
+     * @return The status of the request.
+     */
 
     public static function requestMandatoryPolicies(string ...$filters) : bool
     {
@@ -100,6 +141,12 @@ class Sso
         if (property_exists($request_response, 'status')) return $request_response->status;
         return false;
     }
+
+    /**
+     * Returns an array of all the policies that match the given filters
+     * 
+     * @return An array of policy names that match the filters.
+     */
 
     public static function getPolicies(string ...$filters) : array
     {
@@ -129,6 +176,12 @@ class Sso
         return $filters;
     }
 
+    /**
+     * Check if the user has the policies listed in the input array
+     * 
+     * @return A boolean value indicating success or failure.
+     */
+
     public static function youHaveNoPolicies(string ...$policies_mandatory) : bool
     {
         $find = array('%', '/');
@@ -150,6 +203,15 @@ class Sso
 		return $result !== 0;
     }
 
+    /**
+     * Get users from the API
+     * 
+     * @param get The GET parameter to append to the URL.
+     * @param post The post data to send to the API.
+     * 
+     * @return An array of users.
+     */
+
     public static function getUsers(?string $get = '', ?array $post = null, string ...$keys) :? array
     {
         $request_post = $post ?? [];
@@ -163,6 +225,14 @@ class Sso
         return array_combine($request_response_key, $request_response->{Output::APIDATA});
     }
 
+    /**
+     * Get the hierarchy of the user
+     * 
+     * @param string type _key, firstname, email, ..ecc
+     * 
+     * @return The response is an array of the users in the hierarchy.
+     */
+
     public static function getHierarchy(string $type = '_key') :? array
     {
         $request = Configuration::getHost();
@@ -170,6 +240,15 @@ class Sso
         if (property_exists($request_response, Output::APIDATA)) return $request_response->{Output::APIDATA};
         return null;
     }
+
+    /**
+     * Get the escalation for a given route
+     * 
+     * @param string route The route to the escalation.
+     * @param string skip The type of escalation to skip.
+     * 
+     * @return An array of escalation policies.
+     */
 
     public static function getEscalation(string $route, string $skip = 'none') :? array
     {
@@ -180,6 +259,15 @@ class Sso
         if (property_exists($request_response, Output::APIDATA)) return $request_response->{Output::APIDATA};
         return null;
     }
+
+    /**
+     * Get all applications
+     * 
+     * @param get The GET parameter to be used in the API call.
+     * @param post The post data to send to the API.
+     * 
+     * @return An array of application objects.
+     */
 
     public static function getApplications(?string $get = '', ?array $post = null, string ...$keys) :? array
     {
@@ -196,6 +284,11 @@ class Sso
         return $request_response_key;
     }
 
+    /**
+     * This function sets the static variable to the value returned by the IAMRequest::callAPI
+     * function
+     */
+
     protected static function setWhoami() : void
     {
         $request = Configuration::getHost();
@@ -208,6 +301,12 @@ class Sso
 
         if (null !== static::getWhoamiLanguage()) Language::setSpeech(static::getWhoamiLanguage());
     }
+
+    /**
+     * This function initializes all the available rules
+     * 
+     * @return The response from the API call.
+     */
 
     protected static function initializeAllAvalilableRules() : void
     {
@@ -224,10 +323,18 @@ class Sso
         if (!empty(static::$rules)) static::overload();
     }
 
+    /**
+     * Logout the user and set the cookie to null
+     */
+
     protected static function logout() : void
     {
         Cookie::set(Configuration::getCookieName(), null, -1);
     }
+
+    /**
+     * It decrypts the overload header and sets the overload values.
+     */
 
     protected static function overload() : void
     {
