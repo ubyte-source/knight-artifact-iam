@@ -9,7 +9,7 @@ that project.
 ## Structure
 
 library:
-    - [IAM](https://github.com/energia-source/knight-artifact-iam/tree/main/lib)
+- [IAM](https://github.com/energia-source/knight-artifact-iam/tree/main/lib)
 
 <br>
 
