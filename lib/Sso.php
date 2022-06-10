@@ -73,16 +73,14 @@ class Sso
 
         $check = IAMRequest::instance($cookie_content);
         $check = static::getWhoami();
-        if (null === $check
-            || true !== Cookie::set(Configuration::getCookieName(), $cookie_content)) Navigator::exception();
 
-        $return_url = $_SERVER[Navigator::HTTP_ORIGIN] ?? Navigator::getUrl();
-        $return_url_get = Request::get(Navigator::RETURN_URL);
-        if (null !== $return_url_get) $return_url = base64_decode($return_url_get);
+        if (null === $check
+            || true !== Cookie::set(Configuration::getCookieName(), $cookie_content))
+                Navigator::exception();
 
         Navigator::noCache();
         header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $return_url);
+        header('Location: ' . static::myURL());
 
         exit;
     }
@@ -294,9 +292,9 @@ class Sso
         $request = Configuration::getHost();
         $request_response = IAMRequest::callAPI($request . static::PATH_API_WHOAMI, null, IAMRequest::SKIPSTATUS);
         if (!property_exists($request_response, Output::APIDATA)) Navigator::exception(function () {
-            static::logout();
+            return static::logout();
         });
-
+       
         static::$whoami = $request_response->{Output::APIDATA};
 
         if (null !== static::getWhoamiLanguage()) Language::setSpeech(static::getWhoamiLanguage());
@@ -315,7 +313,7 @@ class Sso
         $request = Configuration::getHost() . static::PATH_API_POLICY;
         $request_response = IAMRequest::callAPI($request, null, IAMRequest::SKIPSTATUS);
         if (false === property_exists($request_response, Output::APIDATA)) Navigator::exception(function () {
-            static::logout();
+            return static::logout();
         });
 
         static::$rules = $request_response->{Output::APIDATA};
@@ -324,12 +322,15 @@ class Sso
     }
 
     /**
-     * Logout the user and set the cookie to null
+     * It sets the cookie to null and then returns the URL of the current page.
+     * 
+     * @return string The URL of the current page.
      */
 
-    protected static function logout() : void
+    protected static function logout() : string
     {
-        Cookie::set(Configuration::getCookieName(), 'null', -1);
+        Cookie::set(Configuration::getCookieName(), 'null', time() - 36e2);
+        return static::myURL();
     }
 
     /**
@@ -345,5 +346,16 @@ class Sso
             $header_decrypt = array_values($header_decrypt);
             IAMRequest::setOverload(...$header_decrypt);
         }
+    }
+
+    /* Getting the current URL and returning it. */
+
+    protected static function myURL() : string
+    {
+        $return_url = $_SERVER[Navigator::HTTP_ORIGIN] ?? Navigator::getUrlWithQueryString();
+        $return_url_get = Request::get(Navigator::RETURN_URL);
+        return null !== $return_url_get
+            ? base64_decode($return_url_get)
+            : $return_url;
     }
 }
