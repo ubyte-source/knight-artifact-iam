@@ -329,7 +329,7 @@ class Sso
 
     protected static function logout() : void
     {
-        Cookie::set(Configuration::getCookieName(), null, -1);
+        Cookie::set(Configuration::getCookieName(), 'null', -1);
     }
 
     /**
