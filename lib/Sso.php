@@ -152,11 +152,8 @@ class Sso
 
         static::initializeAllAvalilableRules();
 
-        $rules = static::$rules;
-        if (!!$overload = IAMRequest::getOverload()) $rules = array_merge($rules, $overload);
-
         $filters = array_diff($filters, array('%'));
-        if (empty($filters)) return $rules;
+        if (empty($filters)) return static::$rules;
 
         $find = array('%', '/');
 		$replace = array('.*', '\/');
@@ -166,7 +163,7 @@ class Sso
 
 		$filters_regex_rule = implode('|', $filters_regex_rule);
         $filters_regex_rule = sprintf(static::MATCH, $filters_regex_rule);
-        $filters = array_filter($rules, function ($rule) use ($filters_regex_rule) {
+        $filters = array_filter(static::$rules, function ($rule) use ($filters_regex_rule) {
             return preg_match($filters_regex_rule, $rule);
         });
 
@@ -283,6 +280,23 @@ class Sso
     }
 
     /**
+     * This function decrypts the overload header and returns an array of the overload policy
+     * 
+     * @return array An array of the overload policy.
+     */
+
+    public static function getRemoteOveloadPolicy() : array
+    {
+        $header = Request::header(IAMRequest::HEADER_OVERLOAD);
+        $header_decrypt = static::getCipher()->decrypt($header);
+        if (null === $header_decrypt) return array();
+
+        $header_decrypt = Request::JSONDecode($header_decrypt);
+        $header_decrypt = array_values($header_decrypt);
+        return $header_decrypt;
+    }
+
+    /**
      * This function sets the static variable to the value returned by the IAMRequest::callAPI
      * function
      */
@@ -308,7 +322,7 @@ class Sso
 
     protected static function initializeAllAvalilableRules() : void
     {
-        if (static::$rules !== null) return;
+        if (null !== static::getRules()) return;
 
         $request = Configuration::getHost() . static::PATH_API_POLICY;
         $request_response = IAMRequest::callAPI($request, null, IAMRequest::SKIPSTATUS);
@@ -318,7 +332,22 @@ class Sso
 
         static::$rules = $request_response->{Output::APIDATA};
 
-        if (!empty(static::$rules)) static::overload();
+        $overload = static::getRemoteOveloadPolicy();
+        if (!!$overload) {
+            IAMRequest::setOverload(...$overload);
+            static::$rules = array_merge(static::$rules, $overload);
+        }       
+    }
+
+    /**
+     * This function returns the rules array if it exists, otherwise it returns null
+     * 
+     * @return The rules array or null.
+     */
+
+    protected static function getRules() :? array
+    {
+        return static::$rules;
     }
 
     /**
@@ -331,21 +360,6 @@ class Sso
     {
         Cookie::set(Configuration::getCookieName(), 'null', time() - 36e2);
         return static::myURL();
-    }
-
-    /**
-     * It decrypts the overload header and sets the overload values.
-     */
-
-    protected static function overload() : void
-    {
-        $header = Request::header(IAMRequest::HEADER_OVERLOAD);
-        $header_decrypt = static::getCipher()->decrypt($header);
-        if (null !== $header_decrypt) {
-            $header_decrypt = Request::JSONDecode($header_decrypt);
-            $header_decrypt = array_values($header_decrypt);
-            IAMRequest::setOverload(...$header_decrypt);
-        }
     }
 
     /* Getting the current URL and returning it. */
