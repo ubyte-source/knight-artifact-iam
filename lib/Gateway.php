@@ -63,6 +63,6 @@ class Gateway
     public static function callAPI(string $basename, string $path, array $post = []) : stdClass
     {
         $request = static::getLink($basename);
-        return Request::callAPI($request . 'api' . chr(47) . $path, $post);
+        return Request::callAPI($request . 'api' . chr(47) . $path, $post, Request::SKIPSTATUS);
     }
 }
