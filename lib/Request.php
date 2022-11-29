@@ -21,6 +21,8 @@ class Request
     const HEADER_OVERRIDE = 'x-override-ip';
     const HEADER_APPLICATION = 'x-application';
     const HEADER_AUTHOTIZATION = 'x-authorization';
+    const HEADER_RETURNCODE = 'x-return-code';
+    const HEADER_RETURNCODE_ENABLE = 'enable';
     const HEADER_OVERLOAD = 'x-overload';
 
     const SKIPSTATUS = 0x1; // (bool)
@@ -158,6 +160,7 @@ class Request
 
     protected static function login() : void
     {
+        Sso::unauthorized();
         Navigator::exception(function (string $current) {
             $redirect = base64_encode($current);
             $redirect = urlencode($redirect);
@@ -196,13 +199,15 @@ class Request
 
     protected static function getHeader() : array
     {
-        $authorization = [
+        $authorization = array(
             static::HEADER_OVERRIDE . chr(58) . chr(32) . Navigator::getClientIP(Navigator::HTTP_X_OVERRIDE_IP_ENABLE),
             static::HEADER_APPLICATION . chr(58) . chr(32) . Configuration::getApplicationKey()
-        ];
+        );
+
         $authorization_token = static::getToken();
         if (null !== $authorization_token) {
-            if (Sso::AUTHORIZATION_TYPE !== substr($authorization_token, 0, strlen(Sso::AUTHORIZATION_TYPE))) $authorization_token = Sso::AUTHORIZATION_TYPE . chr(32) . $authorization_token;
+            if (Sso::AUTHORIZATION_TYPE !== substr($authorization_token, 0, strlen(Sso::AUTHORIZATION_TYPE)))
+                 $authorization_token = Sso::AUTHORIZATION_TYPE . chr(32) . $authorization_token;
             array_push($authorization, static::HEADER_AUTHOTIZATION . chr(58) . chr(32) . $authorization_token);
         }
 
@@ -212,6 +217,9 @@ class Request
             $overload_encrypt = Sso::getCipher()->encrypt($overload_encrypt);
             array_push($authorization, static::HEADER_OVERLOAD . chr(58) . chr(32) . $overload_encrypt);
         }
+
+        if (static::HEADER_RETURNCODE_ENABLE !== KRequest::header(static::HEADER_RETURNCODE))
+            array_push($authorization, static::HEADER_RETURNCODE . chr(58) . chr(32) . static::HEADER_RETURNCODE_ENABLE);
 
         return $authorization;
     }

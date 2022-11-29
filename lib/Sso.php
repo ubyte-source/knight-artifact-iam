@@ -74,14 +74,22 @@ class Sso
         $check = IAMRequest::instance($cookie_content);
         $check = static::getWhoami();
 
-        if (null === $check
-            || true !== Cookie::set(Configuration::getCookieName(), $cookie_content))
-                Navigator::exception();
+        if (null === $check || true !== Cookie::set(Configuration::getCookieName(), $cookie_content)) {
+            static::unauthorized();
+            Navigator::exception();
+        }
 
         Navigator::noCache();
         header('HTTP/1.1 301 Moved Permanently');
         header('Location: ' . static::myURL());
 
+        exit;
+    }
+
+    public static function unauthorized() : void
+    {
+        if (IAMRequest::HEADER_RETURNCODE_ENABLE !== Request::header(IAMRequest::HEADER_RETURNCODE)) return;
+        header('HTTP/1.0 401 Unauthorized');
         exit;
     }
 
