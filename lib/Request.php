@@ -218,7 +218,7 @@ class Request
             array_push($authorization, static::HEADER_OVERLOAD . chr(58) . chr(32) . $overload_encrypt);
         }
 
-        if (static::HEADER_RETURNCODE_ENABLE !== KRequest::header(static::HEADER_RETURNCODE))
+        if (static::HEADER_RETURNCODE_ENABLE === KRequest::header(static::HEADER_RETURNCODE))
             array_push($authorization, static::HEADER_RETURNCODE . chr(58) . chr(32) . static::HEADER_RETURNCODE_ENABLE);
 
         return $authorization;
