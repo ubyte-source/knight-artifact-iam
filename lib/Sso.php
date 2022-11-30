@@ -86,19 +86,27 @@ class Sso
         exit;
     }
 
-    public static function unauthorized() : void
+    /**
+     * If the header is enabled, return a 401 Unauthorized header
+     * 
+     * @param bool header If true, the function will send a 401 header. If false, it will not.
+     * 
+     * @return void the HTTP status code 401.
+     */
+
+    public static function unauthorized(bool $header = true) : void
     {
-        if (IAMRequest::HEADER_RETURNCODE_ENABLE !== Request::header(IAMRequest::HEADER_RETURNCODE)) return;
+        if ($header && IAMRequest::HEADER_RETURNCODE_ENABLE !== Request::header(IAMRequest::HEADER_RETURNCODE)) return;
         header('HTTP/1.0 401 Unauthorized');
         exit;
     }
 
     /**
-     * It returns the current user's identity.
+     *  Get the current user's information from the IAM service
      * 
-     * @return An object with the following properties:
+     * @return ? stdClass An object of type stdClass
      */
-
+    
     public static function getWhoami() :? stdClass
     {
         IAMRequest::instance();

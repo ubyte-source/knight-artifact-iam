@@ -29,11 +29,17 @@ The function returns a new instance of the Cipher class with the key set to the 
 * Set the cookie content to the decoded content.
 * Redirect to the return URL
 
+##### `public static function unauthorized(bool $header = true) : void`
+
+* If the header is enabled, return a 401 Unauthorized header
+
+ * **Returns: void** the HTTP status code 401.
+
 ##### `public static function getWhoami() :? stdClass`
 
-It returns the current user's identity.
+* Get the current user's information from the IAM service.
 
- * **Returns:** An object with the following properties:
+ * **Returns:** ? stdClass An object of type stdClass.
 
 ##### `public static function getWhoamiKey() :? string`
 
